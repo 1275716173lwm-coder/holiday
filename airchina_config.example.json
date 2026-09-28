@@ -1,0 +1,18 @@
+{
+  "personName": "请填写姓名",
+  "employeeId": "请填写员工号",
+  "flightPosition": "副驾驶",
+  "leaveReason": "公休",
+  "dateMode": "calendar",
+  "refreshWaitMilliseconds": 500,
+  "submitWaitMilliseconds": 1500,
+  "forceLeave": false,
+  "autoSubmit": false,
+  "autoConfirm": true,
+  "leaveDates": [
+    "2026-10-01",
+    "2026-10-02",
+    "2026-10-03"
+  ],
+  "days": 3
+}

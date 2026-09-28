@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+airchina-*-check.png
+airchina-retry-check.png
+airchina_config.json
+airchina_schedule.json
+airchina_cancel.signal

@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="国航飞行员预占申请本地填写工具">
+  <title>预占申请助手</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231d4ed8'/%3E%3Cpath d='M16 38h32M22 30l10-12 10 12M32 18v28' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #647086;
+      --line: #dfe5ef;
+      --soft: #f4f7fb;
+      --blue: #1d4ed8;
+      --blue-dark: #173fae;
+      --blue-soft: #eaf0ff;
+      --red: #c82936;
+      --green: #13805b;
+      --shadow: 0 24px 60px rgba(28, 45, 80, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 88% 4%, rgba(29, 78, 216, .12), transparent 32rem),
+        linear-gradient(180deg, #edf3fb 0, #f8fafc 34rem);
+      font-family: "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 48px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .mark { width: 46px; height: 46px; display: grid; place-items: center; color: white; background: var(--blue); border-radius: 14px; box-shadow: 0 10px 24px rgba(29, 78, 216, .24); }
+    .mark svg { width: 26px; }
+    h1 { margin: 0; font-size: 1.55rem; letter-spacing: -.02em; }
+    .subhead { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+    .login-button { border: 1px solid var(--line); background: white; color: var(--ink); padding: 10px 15px; border-radius: 10px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr); gap: 20px; align-items: start; }
+    .card { background: rgba(255,255,255,.96); border: 1px solid rgba(216,224,237,.9); border-radius: 18px; box-shadow: var(--shadow); }
+    .form-card { padding: 26px; }
+    .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+    .section-title h2 { font-size: 1.05rem; margin: 0; }
+    .section-title span { color: var(--muted); font-size: .82rem; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: block; font-weight: 650; font-size: .9rem; margin-bottom: 7px; }
+    input, select {
+      width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; color: var(--ink); background: white; outline: none;
+    }
+    input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+    .divider { height: 1px; background: var(--line); margin: 24px 0; }
+    .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 5px; background: var(--soft); border-radius: 12px; margin-bottom: 18px; }
+    .mode-switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .mode-switch label { margin: 0; padding: 10px 12px; text-align: center; border-radius: 9px; color: var(--muted); cursor: pointer; transition: .16s ease; }
+    .mode-switch input:checked + label { color: var(--blue); background: white; box-shadow: 0 2px 10px rgba(32,51,88,.1); }
+    .range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .calendar-tools { display: flex; align-items: end; gap: 12px; margin-bottom: 14px; }
+    .calendar-tools > div { flex: 1; }
+    .calendar { border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+    .weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .weekdays span { text-align: center; color: var(--muted); font-size: .78rem; padding: 4px 0 8px; }
+    .day { aspect-ratio: 1; min-height: 38px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); }
+    .day:hover { background: var(--blue-soft); color: var(--blue); }
+    .day.in-range { color: var(--blue-dark); background: var(--blue-soft); border-radius: 0; }
+    .day.selected { color: white; background: var(--blue); box-shadow: 0 5px 12px rgba(29,78,216,.22); }
+    .day.blank { pointer-events: none; }
+    .selection-summary { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 14px; padding: 13px 15px; background: var(--blue-soft); border-radius: 12px; color: var(--blue-dark); }
+    .selection-summary strong { font-size: 1.05rem; }
+    .selection-summary span { font-size: .85rem; text-align: right; }
+    .hidden { display: none !important; }
+    .side-card { padding: 20px; position: sticky; top: 20px; }
+    .status-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .status-head h2 { margin: 0; font-size: 1.05rem; }
+    .badge { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .82rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #98a2b3; }
+    .badge.running .dot { background: #e69b19; box-shadow: 0 0 0 5px rgba(230,155,25,.12); animation: pulse 1.2s infinite; }
+    .badge.success .dot { background: var(--green); }
+    .badge.error .dot { background: var(--red); }
+    @keyframes pulse { 50% { opacity: .45; } }
+    .log { min-height: 132px; max-height: 238px; overflow: auto; margin: 16px 0; padding: 13px; border-radius: 12px; background: #111827; color: #dbeafe; font: 13px/1.65 Consolas, monospace; white-space: pre-wrap; }
+    .actions { display: grid; gap: 10px; }
+    .btn { min-height: 46px; border-radius: 11px; border: 1px solid transparent; padding: 10px 15px; font-weight: 700; transition: .15s ease; }
+    .btn:disabled { cursor: not-allowed; opacity: .48; }
+    .btn-primary { background: var(--blue); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--blue-dark); }
+    .btn-secondary { background: white; color: var(--ink); border-color: var(--line); }
+    .btn-danger { background: #fff5f5; color: var(--red); border-color: #f1cbd0; }
+    .safe-note { margin: 14px 0 0; color: var(--muted); font-size: .8rem; }
+    .text-button { margin-top: 7px; padding: 0; border: 0; background: transparent; color: var(--blue); font-size: .8rem; }
+    .schedule-box { display: grid; gap: 10px; margin-bottom: 14px; }
+    .keep-alive-row { margin: 10px 0; }
+    .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px); opacity: 0; padding: 11px 16px; color: white; background: #172033; border-radius: 10px; box-shadow: var(--shadow); pointer-events: none; transition: .2s ease; z-index: 20; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    dialog { width: min(470px, calc(100% - 30px)); border: 0; border-radius: 18px; padding: 0; box-shadow: 0 30px 80px rgba(18,28,49,.3); }
+    dialog::backdrop { background: rgba(15,23,42,.55); backdrop-filter: blur(3px); }
+    .dialog-body { padding: 24px; }
+    .dialog-body h2 { margin: 0 0 8px; font-size: 1.2rem; }
+    .dialog-body p { margin: 0 0 18px; color: var(--muted); }
+    .check-row { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: var(--soft); border-radius: 10px; }
+    .check-row input { width: 18px; min-height: 18px; margin-top: 2px; }
+    .check-row label { margin: 0; font-weight: 500; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    details { margin-top: 14px; color: var(--muted); font-size: .84rem; }
+    details summary { cursor: pointer; }
+    .advanced { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .advanced label { font-size: .78rem; }
+    @media (max-width: 840px) {
+      .layout { grid-template-columns: 1fr; }
+      .side-card { position: static; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 18px; }
+      header { align-items: flex-start; }
+      .subhead { display: none; }
+      .form-card { padding: 18px; }
+      .fields, .range-grid { grid-template-columns: 1fr; }
+      .calendar { padding: 9px; }
+      .day { min-height: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 14.5h16M7.5 10 12 4l4.5 6M12 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><h1>预占申请助手</h1><p class="subhead">飞行员综合服务平台 · 本机专用</p></div>
+      </div>
+      <button class="login-button" id="loginButton" type="button">重新登录</button>
+    </header>
+
+    <div class="layout">
+      <form class="card form-card" id="requestForm">
+        <div class="section-title"><h2>申请信息</h2><span>内容会保存到本机</span></div>
+        <div class="fields">
+          <div><label for="personName">人员姓名</label><input id="personName" autocomplete="name" required></div>
+          <div><label for="employeeId">员工号</label><input id="employeeId" inputmode="numeric" required></div>
+          <div><label for="flightPosition">飞行岗位</label><select id="flightPosition" required><option value="">正在读取网页选项……</option></select></div>
+          <div><label for="leaveReason">请假事由</label><select id="leaveReason" required><option value="">正在读取网页选项……</option></select><button class="text-button" id="refreshReasons" type="button">从网页刷新选项</button></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-title"><h2>请假日期</h2><span id="modeHint">连续日期按首尾计算</span></div>
+        <div class="mode-switch" role="radiogroup" aria-label="日期填写方式">
+          <input type="radio" name="dateMode" id="modeRange" value="range"><label for="modeRange">起止日期</label>
+          <input type="radio" name="dateMode" id="modeCalendar" value="calendar"><label for="modeCalendar">日历点选</label>
+        </div>
+
+        <section id="dateCalendar">
+          <div class="calendar-tools"><div><label for="calendarMonth">选择月份</label><input type="month" id="calendarMonth"></div></div>
+          <div class="calendar" aria-label="选择请假日期">
+            <div class="weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+          </div>
+        </section>
+
+        <div class="selection-summary" aria-live="polite"><strong id="dayCount">0 天</strong><span id="dateSummary">请选择请假日期</span></div>
+        <div class="check-row"><input type="checkbox" id="forceLeave"><label for="forceLeave">强制请假：只保留预选日期中的可用日期，不补选其他日期</label></div>
+        <details open>
+          <summary>自动提交刷新设置</summary>
+          <div class="advanced">
+            <div><label for="refreshWait">提交按钮刷新间隔（毫秒）</label><input type="number" id="refreshWait" min="100" step="100"></div>
+            <div><label for="submitWait">提交等待（毫秒）</label><input type="number" id="submitWait" min="100" step="100"></div>
+          </div>
+        </details>
+      </form>
+
+      <aside class="card side-card">
+        <div class="status-head"><h2>运行状态</h2><div class="badge" id="statusBadge"><i class="dot"></i><span>就绪</span></div></div>
+        <div class="log" id="logArea" role="status">尚未运行任务。</div>
+        <div class="schedule-box">
+          <div class="check-row"><input type="checkbox" id="enableSchedule"><label for="enableSchedule">定时发起（可选）</label></div>
+          <div id="scheduleTimeRow" class="hidden">
+            <label for="scheduledAt">发起日期和时间（精确到秒）</label><input type="datetime-local" id="scheduledAt" step="1">
+            <div class="check-row keep-alive-row"><input type="checkbox" id="keepAliveBeforeStart" checked><label for="keepAliveBeforeStart">开始前保持登录并定时刷新</label></div>
+            <div id="keepAliveIntervalRow"><label for="keepAliveInterval">登录保活刷新间隔（分钟）</label><input type="number" id="keepAliveInterval" min="0.5" step="0.5" value="5"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="fillButton" type="button">只填表，不提交</button>
+          <button class="btn btn-danger" id="submitButton" type="button">等待开放并自动提交</button>
+          <button class="btn btn-secondary" id="saveButton" type="button">仅保存设置</button>
+          <button class="btn btn-secondary hidden" id="cancelScheduleButton" type="button">取消定时任务</button>
+          <button class="btn btn-danger hidden" id="cancelRefreshButton" type="button">停止刷新</button>
+        </div>
+        <p class="safe-note">“只填表”入口始终没有提交权限。提交入口会再次要求确认。</p>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="confirmDialog">
+    <div class="dialog-body">
+      <h2>确认启用自动提交？</h2>
+      <p>程序会持续刷新。检测到提交按钮可用后，将填写当前信息、点击提交并处理确认弹窗。</p>
+      <div class="check-row"><input type="checkbox" id="autoConfirm" checked><label for="autoConfirm">提交后自动点击确认弹窗</label></div>
+      <div class="dialog-actions"><button class="btn btn-secondary" id="cancelSubmit" type="button">取消</button><button class="btn btn-danger" id="confirmSubmit" type="button">确认并开始</button></div>
+    </div>
+  </dialog>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const TOKEN = '__AIRCHINA_TOKEN__';
+    const $ = (id) => document.getElementById(id);
+    const selectedDates = new Set();
+    let rangeStart = '';
+    let rangeEnd = '';
+    let statusTimer;
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', 'X-AirChina-Token': TOKEN, ...(options.headers || {}) },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || '操作失败。');
+      return data;
+    }
+
+    function isoDate(year, month, day) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function todayMonth() {
+      const date = new Date();
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function renderCalendar() {
+      const value = $('calendarMonth').value || todayMonth();
+      const [year, month] = value.split('-').map(Number);
+      const firstWeekday = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+      const days = new Date(year, month, 0).getDate();
+      const grid = $('calendarGrid');
+      grid.replaceChildren();
+      for (let i = 0; i < firstWeekday; i += 1) {
+        const blank = document.createElement('span');
+        blank.className = 'day blank';
+        grid.append(blank);
+      }
+      for (let day = 1; day <= days; day += 1) {
+        const date = isoDate(year, month, day);
+        const button = document.createElement('button');
+        button.type = 'button';
+        const pointSelected = currentMode() === 'calendar' && selectedDates.has(date);
+        const rangeSelected = currentMode() === 'range' && (date === rangeStart || date === rangeEnd);
+        const rangeMiddle = currentMode() === 'range' && rangeStart && rangeEnd && date > rangeStart && date < rangeEnd;
+        button.className = `day${rangeMiddle ? ' in-range' : ''}${pointSelected || rangeSelected ? ' selected' : ''}`;
+        button.textContent = day;
+        button.setAttribute('aria-label', `${month}月${day}日`);
+        button.setAttribute('aria-pressed', pointSelected || rangeSelected || rangeMiddle);
+        button.addEventListener('click', () => {
+          if (currentMode() === 'calendar') {
+            selectedDates.has(date) ? selectedDates.delete(date) : selectedDates.add(date);
+          } else if (!rangeStart || rangeEnd) {
+            rangeStart = date;
+            rangeEnd = '';
+          } else if (date < rangeStart) {
+            rangeEnd = rangeStart;
+            rangeStart = date;
+          } else {
+            rangeEnd = date;
+          }
+          renderCalendar();
+          updateSummary();
+        });
+        grid.append(button);
+      }
+    }
+
+    function currentMode() {
+      return document.querySelector('input[name="dateMode"]:checked')?.value || 'range';
+    }
+
+    function rangeDates() {
+      if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return [];
+      const dates = [];
+      const cursor = new Date(`${rangeStart}T12:00:00`);
+      const last = new Date(`${rangeEnd}T12:00:00`);
+      while (cursor <= last) {
+        dates.push(isoDate(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return dates;
+    }
+
+    function updateSummary() {
+      const dates = currentMode() === 'calendar' ? [...selectedDates].sort() : rangeDates();
+      $('dayCount').textContent = `${dates.length} 天`;
+      if (!dates.length) $('dateSummary').textContent = '请选择请假日期';
+      else if (dates.length <= 4) $('dateSummary').textContent = dates.map((date) => date.slice(5).replace('-', '/')).join('、');
+      else $('dateSummary').textContent = `${dates[0].slice(5).replace('-', '/')} 等 ${dates.length} 个日期`;
+    }
+
+    function switchMode() {
+      const calendar = currentMode() === 'calendar';
+      $('modeHint').textContent = calendar ? '可选择不连续日期' : '先点起始日，再点结束日';
+      renderCalendar();
+      updateSummary();
+    }
+
+    function collectConfig() {
+      const mode = currentMode();
+      const config = {
+        personName: $('personName').value.trim(),
+        employeeId: $('employeeId').value.trim(),
+        flightPosition: $('flightPosition').value.trim(),
+        leaveReason: $('leaveReason').value.trim(),
+        dateMode: mode,
+        refreshWaitMilliseconds: Number($('refreshWait').value) || 500,
+        submitWaitMilliseconds: Number($('submitWait').value) || 1500,
+        forceLeave: $('forceLeave').checked,
+        autoConfirm: $('autoConfirm').checked,
+      };
+      if (mode === 'calendar') config.leaveDates = [...selectedDates].sort();
+      else {
+        config.startDate = rangeStart;
+        config.endDate = rangeEnd;
+      }
+      return config;
+    }
+
+    function validateForm() {
+      if (!$('requestForm').reportValidity()) return false;
+      const config = collectConfig();
+      if (config.dateMode === 'calendar' && !config.leaveDates.length) throw new Error('请至少点选一个日期。');
+      if (config.dateMode === 'range' && (!config.startDate || !config.endDate)) throw new Error('请选择起始和结束日期。');
+      if (config.dateMode === 'range' && config.startDate > config.endDate) throw new Error('结束日期不能早于起始日期。');
+      return true;
+    }
+
+    function toast(message) {
+      $('toast').textContent = message;
+      $('toast').classList.add('show');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => $('toast').classList.remove('show'), 2400);
+    }
+
+    async function save() {
+      if (!validateForm()) return;
+      await api('/api/save', { method: 'POST', body: JSON.stringify(collectConfig()) });
+      toast('设置已保存');
+    }
+
+    async function loadReasons(preferred = '', preferredPosition = '', refresh = false) {
+      $('refreshReasons').disabled = true;
+      $('refreshReasons').textContent = refresh ? '正在从网页读取……' : '从网页刷新选项';
+      try {
+        const options = refresh
+          ? await api('/api/options/refresh', { method: 'POST', body: '{}' })
+          : await api('/api/options');
+        if (!refresh && (!(options.reasons || []).length || !(options.positions || []).length)) {
+          return loadReasons(preferred, preferredPosition, true);
+        }
+        const reasons = [...new Set([...(options.reasons || []), preferred].filter(Boolean))];
+        $('leaveReason').replaceChildren(...reasons.map((reason) => {
+          const option = document.createElement('option');
+          option.value = reason;
+          option.textContent = reason;
+          return option;
+        }));
+        if (preferred && reasons.includes(preferred)) $('leaveReason').value = preferred;
+        const positions = [...new Set([...(options.positions || []), preferredPosition].filter(Boolean))];
+        $('flightPosition').replaceChildren(...positions.map((position) => {
+          const option = document.createElement('option');
+          option.value = position;
+          option.textContent = position;
+          return option;
+        }));
+        if (preferredPosition && positions.includes(preferredPosition)) $('flightPosition').value = preferredPosition;
+        if (refresh) toast(`已从网页读取 ${reasons.length} 个事由`);
+      } finally {
+        $('refreshReasons').disabled = false;
+        $('refreshReasons').textContent = '从网页刷新选项';
+      }
+    }
+
+    async function run(action) {
+      if (action !== 'login' && !validateForm()) return;
+      let scheduledAt = null;
+      let keepAliveBeforeStart = false;
+      let keepAliveIntervalMinutes = 5;
+      if (action !== 'login' && $('enableSchedule').checked) {
+        if (!$('scheduledAt').value) throw new Error('请选择定时发起的日期和时间。');
+        const date = new Date($('scheduledAt').value);
+        if (date.getTime() <= Date.now()) throw new Error('定时发起时间必须晚于当前时间。');
+        scheduledAt = date.toISOString();
+        keepAliveBeforeStart = $('keepAliveBeforeStart').checked;
+        keepAliveIntervalMinutes = Math.max(0.5, Number($('keepAliveInterval').value) || 5);
+      }
+      await api('/api/run', { method: 'POST', body: JSON.stringify({
+        action, config: collectConfig(), scheduledAt, keepAliveBeforeStart, keepAliveIntervalMinutes,
+      }) });
+      toast(action === 'login' ? '登录窗口已打开' : scheduledAt ? '定时任务已安排' : '任务已启动');
+      await refreshStatus();
+    }
+
+    async function refreshStatus() {
+      try {
+        const state = await api('/api/status');
+        const badge = $('statusBadge');
+        badge.className = `badge ${state.running || state.scheduledAt ? 'running' : state.exitCode === 0 ? 'success' : state.exitCode === null ? '' : 'error'}`;
+        badge.querySelector('span').textContent = state.running && state.scheduledAt ? '登录保活中' : state.running ? '运行中' : state.scheduledAt ? '已定时' : state.exitCode === 0 ? '已完成' : state.exitCode === null ? '就绪' : '已停止';
+        $('logArea').textContent = state.logs.length ? state.logs.join('\n') : '尚未运行任务。';
+        $('logArea').scrollTop = $('logArea').scrollHeight;
+        for (const id of ['fillButton', 'submitButton', 'loginButton', 'saveButton', 'refreshReasons']) $(id).disabled = state.running || Boolean(state.scheduledAt);
+        $('cancelScheduleButton').classList.toggle('hidden', !state.scheduledAt);
+        $('cancelRefreshButton').classList.toggle('hidden', !(state.running && state.action === 'submit'));
+      } catch {}
+    }
+
+    async function load() {
+      try {
+        const config = await api('/api/config');
+        for (const key of ['personName', 'employeeId']) $(key).value = config[key] || '';
+        await loadReasons(config.leaveReason || '', config.flightPosition || '');
+        $('refreshWait').value = config.refreshWaitMilliseconds || 500;
+        $('submitWait').value = config.submitWaitMilliseconds || 1500;
+        $('forceLeave').checked = config.forceLeave === true;
+        $('autoConfirm').checked = config.autoConfirm !== false;
+        const mode = config.dateMode || (Array.isArray(config.leaveDates) ? 'calendar' : 'range');
+        $(mode === 'calendar' ? 'modeCalendar' : 'modeRange').checked = true;
+        rangeStart = config.startDate || '';
+        rangeEnd = config.endDate || '';
+        selectedDates.clear();
+        for (const date of config.leaveDates || []) selectedDates.add(date);
+        $('calendarMonth').value = (config.leaveDates?.[0] || config.startDate || todayMonth()).slice(0, 7);
+        renderCalendar(); switchMode(); updateSummary();
+      } catch (error) { toast(error.message); }
+      await refreshStatus();
+      statusTimer = setInterval(refreshStatus, 900);
+    }
+
+    document.querySelectorAll('input[name="dateMode"]').forEach((input) => input.addEventListener('change', switchMode));
+    $('calendarMonth').addEventListener('change', () => { selectedDates.clear(); rangeStart = ''; rangeEnd = ''; renderCalendar(); updateSummary(); });
+    $('refreshReasons').addEventListener('click', () => loadReasons($('leaveReason').value, $('flightPosition').value, true).catch((error) => toast(error.message)));
+    $('enableSchedule').addEventListener('change', () => $('scheduleTimeRow').classList.toggle('hidden', !$('enableSchedule').checked));
+    $('keepAliveBeforeStart').addEventListener('change', () => $('keepAliveIntervalRow').classList.toggle('hidden', !$('keepAliveBeforeStart').checked));
+    $('saveButton').addEventListener('click', () => save().catch((error) => toast(error.message)));
+    $('fillButton').addEventListener('click', () => run('fill').catch((error) => toast(error.message)));
+    $('loginButton').addEventListener('click', () => run('login').catch((error) => toast(error.message)));
+    $('submitButton').addEventListener('click', () => { try { if (validateForm()) $('confirmDialog').showModal(); } catch (error) { toast(error.message); } });
+    $('cancelSubmit').addEventListener('click', () => $('confirmDialog').close());
+    $('confirmSubmit').addEventListener('click', () => { $('confirmDialog').close(); run('submit').catch((error) => toast(error.message)); });
+    $('cancelScheduleButton').addEventListener('click', async () => {
+      try { await api('/api/schedule/cancel', { method: 'POST', body: '{}' }); toast('定时任务已取消'); await refreshStatus(); }
+      catch (error) { toast(error.message); }
+    });
+    $('cancelRefreshButton').addEventListener('click', async () => {
+      try { await api('/api/refresh/cancel', { method: 'POST', body: '{}' }); toast('正在停止刷新'); await refreshStatus(); }
+      catch (error) { toast(error.message); }
+    });
+    window.addEventListener('beforeunload', () => clearInterval(statusTimer));
+    load();
+  </script>
+</body>
+</html>

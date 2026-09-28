@@ -1,0 +1,16 @@
+{
+  "name": "airchina-web-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DOM-based form automation for the Air China leave reservation web app",
+  "scripts": {
+    "ui": "node airchina_ui.js --open",
+    "login": "node airchina_web.js --login --keep-browser-open",
+    "fill": "node airchina_web.js --keep-browser-open",
+    "submit": "node airchina_web.js --wait-open --allow-submit --keep-browser-open",
+    "test": "node --check airchina_web.js && node --check airchina_ui.js && node airchina_web.js --self-test-rules && node airchina_web.js --validate-config"
+  },
+  "dependencies": {
+    "playwright-core": "1.55.0"
+  }
+}
